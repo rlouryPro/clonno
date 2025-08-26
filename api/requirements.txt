@@ -1,0 +1,12 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.8.2
+pydantic-settings==2.4.0
+pymilvus==2.4.6
+numpy==1.26.4
+sentence-transformers==3.0.1
+python-dotenv==1.0.1
+# ✅ Fix compat pymilvus → environs → marshmallow
+# environs vérifie marshmallow.__version_info__ (présent en v3.x, supprimé en v4)
+marshmallow>=3.13,<4
+environs>=9.5.0,<11

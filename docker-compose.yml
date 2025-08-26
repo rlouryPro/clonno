@@ -1,0 +1,88 @@
+services:
+  minio:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: admin123
+    command: ["minio","server","/data","--console-address",":9001"]
+    ports: ["9000:9000","9001:9001"]
+    volumes: ["minio-data:/data"]
+    networks: [appnet]
+    healthcheck:
+      test: ["CMD-SHELL","curl -sf http://localhost:9000/minio/health/live || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  minio-mc-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh","-c"]
+    command:
+      - >
+        set -e;
+        mc alias set local http://minio:9000 admin admin123;
+        mc ready -q local;
+        mc mb -p local/milvus-bucket || true
+    networks: [appnet]
+    restart: "no"
+
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js"]      
+    restart: unless-stopped
+    networks: [appnet]
+
+  milvus-standalone:
+    image: milvusdb/milvus:v2.4.6
+    command: ["milvus","run","standalone"]
+    depends_on:
+      minio:
+        condition: service_started
+      minio-mc-init:
+        condition: service_completed_successfully
+      nats:
+        condition: service_started
+    environment:
+      ETCD_USE_EMBED: "true"
+      MILVUS_LOG_LEVEL: "info"
+
+    ports: ["19530:19530","9091:9091"]
+    ulimits:
+      nofile: { soft: 65536, hard: 65536 }
+    shm_size: "1g"
+    volumes:
+      - "milvus-data:/var/lib/milvus"
+      - "./milvus.yaml:/milvus/configs/milvus.yaml:ro"  
+    networks: [appnet]
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: search-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - MILVUS_HOST=milvus-standalone
+      - MILVUS_PORT=19530
+      - COLLECTION_NAME=${COLLECTION_NAME:-documents}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+    depends_on:
+      - milvus-standalone
+    ports:
+      - "8000:8000"
+    networks:
+      - appnet   
+
+
+networks:
+  appnet: {}
+
+volumes:
+  minio-data: {}
+  milvus-data: {}
+
+  

@@ -1,0 +1,55 @@
+common:
+  storageType: minio
+
+minio:
+  address: minio
+  port: 9000
+  accessKeyID: admin
+  secretAccessKey: admin123
+  useSSL: false
+  bucketName: milvus-bucket
+  rootPath: files
+
+proxy:
+  address: 0.0.0.0
+  port: 19530
+  internalPort: 19529
+
+queryNode:           # <-- bloc unique
+  address: 0.0.0.0
+  port: 21123
+  mmap:
+    mmapEnabled: true
+    mmapDirPath: /var/lib/milvus/mmap
+
+rootCoord:
+  address: 0.0.0.0
+  port: 53100
+
+dataCoord:
+  address: 0.0.0.0
+  port: 13333
+
+queryCoord:
+  address: 0.0.0.0
+  port: 19531
+
+indexCoord:
+  address: 0.0.0.0
+  port: 31000
+
+dataNode:
+  address: 0.0.0.0
+  port: 21124
+
+indexNode:
+  address: 0.0.0.0
+  port: 31001
+
+mq:
+  type: natsmq
+  nats:
+    address: nats:4222
+
+localStorage:
+  path: /var/lib/milvus
