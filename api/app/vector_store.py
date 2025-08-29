@@ -1,5 +1,6 @@
 from typing import List
 import numpy as np
+import os
 from pymilvus import (
 connections, FieldSchema, CollectionSchema, DataType, Collection, utility
 )
@@ -15,6 +16,7 @@ META_FIELD = "metadata"
 
 class VectorStore:
     def __init__(self):
+
         # Connect to Milvus
         connections.connect(
         alias="default",
